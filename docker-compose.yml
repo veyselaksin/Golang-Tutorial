@@ -1,0 +1,29 @@
+version: "3.7"
+
+services:
+  api:
+    container_name: "tutorial_api"
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    env_file: ".env"
+    ports:
+        - 8000:8000
+    depends_on:
+        - db
+
+  db:
+    image: postgres:14.0-alpine
+    hostname: db
+    container_name: "tutorial_db"
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DATABASE=golang_tutorial
+
+volumes:
+  postgres_data:

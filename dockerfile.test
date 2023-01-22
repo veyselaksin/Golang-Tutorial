@@ -1,0 +1,11 @@
+FROM golang:latest as BUILD
+RUN apt-get update 
+WORKDIR /app
+COPY . .
+
+# To test all tests in the service
+ENTRYPOINT ["go", "test", "-v", "./...", "-coverprofile", "cover.out"]
+
+# To test specific method
+# ENTRYPOINT ["go", "test", "-run", "TestAgendaTweetsTR", "tga-analysis/pkg/twitter/", "-coverprofile", "cover.out"] 
+go test -v ./... -coverprofile cover.out
