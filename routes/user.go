@@ -1,9 +1,12 @@
 package routes
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/veyselaksin/Golang-Tutorial/database"
 	"github.com/veyselaksin/Golang-Tutorial/models"
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -11,6 +14,21 @@ type User struct {
 	ID        uint   `json:"id"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
+}
+
+type IUser interface {
+	CreateUser(c *fiber.Ctx) error
+	GetUsers(c *fiber.Ctx) error
+}
+
+type user struct {
+	db *gorm.DB
+}
+
+var _ IUser = &user{}
+
+func NewUser(db *gorm.DB) IUser {
+	return &user{db: db}
 }
 
 func CreateResponseUser(userModel models.User) User {
@@ -21,21 +39,45 @@ func CreateResponseUser(userModel models.User) User {
 	}
 }
 
-func CreateUser(c *fiber.Ctx) error {
+func (u user) CreateUser(c *fiber.Ctx) error {
 	var user models.User
 
 	if err := c.BodyParser(&user); err != nil {
 		return c.Status(400).JSON(err.Error())
 	}
 
-	database.ConnectDB().Create(&user)
+	a, _ := u.db.DB()
+
+	u.db.Create(&user)
+	fmt.Println("Connection Open Connection 1: ", a.Stats().OpenConnections)
+	fmt.Println("Connection Max Connection 1: ", a.Stats().MaxOpenConnections)
+	fmt.Println("Idle Connection Size 1: ", a.Stats().Idle)
+	fmt.Println("Max Idle Closed 1: ", a.Stats().MaxIdleClosed)
+	u.db.Save(&user)
+	fmt.Println("Connection Open Connection 2: ", a.Stats().OpenConnections)
+	fmt.Println("Connection Max Connection 2: ", a.Stats().MaxOpenConnections)
+	fmt.Println("Idle Connection Size 2: ", a.Stats().Idle)
+	fmt.Println("Max Idle Closed 2: ", a.Stats().MaxIdleClosed)
+
+	tx := u.db.Begin()
+	tx.SavePoint("sp")
+
+	flag := true
+	if flag {
+		u.db.Find(&user)
+	}
+
+	fmt.Println("Connection Open Connection 3: ", a.Stats().OpenConnections)
+	fmt.Println("Connection Max Connection 3: ", a.Stats().MaxOpenConnections)
+	fmt.Println("Idle Connection Size 3: ", a.Stats().Idle)
+	fmt.Println("Max Idle Closed 3: ", a.Stats().MaxIdleClosed)
 
 	responseUser := CreateResponseUser(user)
 
 	return c.Status(200).JSON(responseUser)
 }
 
-func GetUsers(c *fiber.Ctx) error {
+func (u user) GetUsers(c *fiber.Ctx) error {
 	users := []models.User{}
 
 	database.ConnectDB().Find(&users)
