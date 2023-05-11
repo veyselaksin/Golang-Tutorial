@@ -40,8 +40,8 @@ func main() {
 	// TODO: Add migrations
 	connection.AutoMigrate(
 		&models.User{},
-		&models.Product{},
-		&models.Order{},
+		// &models.Product{},
+		// &models.Order{},
 	)
 
 	app := fiber.New()
